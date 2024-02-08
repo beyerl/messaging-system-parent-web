@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messaging System Parent Web</title>
+    <style>
+        html {
+            height: 100%;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            height: 100%;
+        }
+
+        iframe {
+            width: 100%;
+            height: 80%;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #hostCallLog {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+
+<body>
+
+    <iframe id="AdeIframe" src="https://beyerl.github.io/messaging-system-child/" frameborder="0"></iframe>
+
+    <button id="sampleButton">Sample</button>
+
+    <h3>Host Call Log</h3>
+    <div id="hostCallLog"></div>
+
+    <script>
+        document.getElementById('sampleButton').addEventListener('click', function () {
+            let iframeWindow = document.getElementById('AdeIframe').contentWindow;
+            let hostCallLog = document.getElementById('hostCallLog');
+
+            if (iframeWindow) {
+                iframeWindow.postMessage('sendselecteditem', '*');
+            } else {
+                console.error('Could not access iframe contentWindow.');
+            }
+
+            if (hostCallLog) {
+                hostCallLog.innerHTML += 'Querying Iframe for selected Item<br>';
+            }
+        });
+
+        // Function to handle post messages from the iframe
+        function handlePostMessage(event) {
+            let iframeSrc = document.getElementById('AdeIframe').src
+            let url = new URL(iframeSrc)
+            if (event.origin !== url.origin) {
+                return;
+            }
+
+            var hostCallLog = document.getElementById('hostCallLog');
+            if (hostCallLog) {
+                // Log the received message
+                hostCallLog.innerHTML += 'Sending Item ' + event.data + ' to backend<br>';
+            }
+        }
+
+        window.addEventListener('message', handlePostMessage);
+    </script>
+
+</body>
+
+</html>
