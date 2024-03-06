@@ -34,14 +34,44 @@
             border: 1px solid #ddd;
             background-color: #f9f9f9;
         }
+
+        #dropArea {
+            padding: 10px;
+            height: 200px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: #ddd 1px solid;
+        }
+
+        .panel {
+            margin-top: 20px;
+            width: 100%;
+            display: flex;
+        }
+
+        .w-50 {
+            width: 50%;
+        }
     </style>
 </head>
 
 <body>
 
-    <iframe id="AdeIframe" src="https://beyerl.github.io/messaging-system-child/" frameborder="0"></iframe>
+    <iframe id="AdeIframe" src="http://localhost:4200/" frameborder="0"></iframe>
 
-    <button id="sampleButton">Sample</button>
+    <div class="panel">
+        <div class="w-50">
+            <button id="sampleButton">Sample</button>
+        </div>
+
+        <div id="dropArea" class="w-50" ondragover="onDragOver(event)">
+            <div id="dropAreaLabel">
+                Drag and Drop
+            </div>
+        </div>
+    </div>
+
 
     <h3>Host Call Log</h3>
     <div id="hostCallLog"></div>
@@ -51,16 +81,42 @@
             let iframeWindow = document.getElementById('AdeIframe').contentWindow;
             let hostCallLog = document.getElementById('hostCallLog');
 
-            if (iframeWindow) {
-                iframeWindow.postMessage('sendselecteditem', '*');
-            } else {
+            if (!iframeWindow) {
                 console.error('Could not access iframe contentWindow.');
+                return;
             }
+
+            iframeWindow.postMessage('sendselecteditem', '*');
 
             if (hostCallLog) {
                 hostCallLog.innerHTML += 'Querying Iframe for selected Item<br>';
             }
         });
+
+        document.getElementById('dropArea').addEventListener('drop', function (event) {
+            console.log(event.dataTransfer.getData("MyDragData"))
+        })
+
+        function handleDragEnd(data) {
+
+            const syntheticEvent = new DragEvent("drop");
+            // Override dataTransfer first so we can define our own.
+            Object.defineProperty(syntheticEvent, "dataTransfer", {
+                value: {}
+            });
+            // Once dataTransfer is overridden, you can define getData.
+            syntheticEvent.dataTransfer.getData = dragFormatRequested => {
+                // only handling text atm.
+                if (dragFormatRequested == "MyDragData") {
+                    return data.payload;
+                }
+            };
+            const target = document.elementFromPoint(data.eventCoordinates.x, data.eventCoordinates.y)
+            Object.defineProperty(syntheticEvent, "target", {
+                value: target
+            });
+            target.dispatchEvent(syntheticEvent);
+        }
 
         // Function to handle post messages from the iframe
         function handlePostMessage(event) {
@@ -71,13 +127,31 @@
             }
 
             var hostCallLog = document.getElementById('hostCallLog');
-            if (hostCallLog) {
-                // Log the received message
-                hostCallLog.innerHTML += 'Sending Item ' + event.data + ' to backend<br>';
+            if (!hostCallLog) {
+                console.log("hostCallLog missing,")
+            }
+
+            switch (event.data.type) {
+                case 1:
+                    hostCallLog.innerHTML += 'Sending Item ' + event.data.payload + ' to backend<br>';
+                    break;
+                case 3:
+                    handleDragEnd(event.data);
+                    break;
             }
         }
 
+        function onDragOver(event) {
+            let iframeWindow = document.getElementById('AdeIframe').contentWindow;
+
+            if (!iframeWindow) {
+                console.error('Could not access iframe contentWindow.');
+                return;
+            } iframeWindow.postMessage('dragoverdroparea', '*');
+        }
+
         window.addEventListener('message', handlePostMessage);
+
     </script>
 
 </body>
