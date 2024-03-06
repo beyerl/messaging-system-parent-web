@@ -65,7 +65,7 @@
             <button id="sampleButton">Sample</button>
         </div>
 
-        <div id="dropArea" class="w-50" ondragover="onDragOver(event)">
+        <div id="dropArea" class="w-50" ondragover="onDragOver(event)" ondrop="onDrop(event)">
             <div id="dropAreaLabel">
                 Drag and Drop
             </div>
@@ -93,31 +93,6 @@
             }
         });
 
-        document.getElementById('dropArea').addEventListener('drop', function (event) {
-            console.log(event.dataTransfer.getData("MyDragData"))
-        })
-
-        function handleDragEnd(data) {
-
-            const syntheticEvent = new DragEvent("drop");
-            // Override dataTransfer first so we can define our own.
-            Object.defineProperty(syntheticEvent, "dataTransfer", {
-                value: {}
-            });
-            // Once dataTransfer is overridden, you can define getData.
-            syntheticEvent.dataTransfer.getData = dragFormatRequested => {
-                // only handling text atm.
-                if (dragFormatRequested == "MyDragData") {
-                    return data.payload;
-                }
-            };
-            const target = document.elementFromPoint(data.eventCoordinates.x, data.eventCoordinates.y)
-            Object.defineProperty(syntheticEvent, "target", {
-                value: target
-            });
-            target.dispatchEvent(syntheticEvent);
-        }
-
         // Function to handle post messages from the iframe
         function handlePostMessage(event) {
             let iframeSrc = document.getElementById('AdeIframe').src
@@ -135,19 +110,18 @@
                 case 1:
                     hostCallLog.innerHTML += 'Sending Item ' + event.data.payload + ' to backend<br>';
                     break;
-                case 3:
-                    handleDragEnd(event.data);
-                    break;
             }
         }
 
         function onDragOver(event) {
-            let iframeWindow = document.getElementById('AdeIframe').contentWindow;
+            console.log("🚀 ~ onDragOver ~ event:", event)
+            event.preventDefault();
+        }
 
-            if (!iframeWindow) {
-                console.error('Could not access iframe contentWindow.');
-                return;
-            } iframeWindow.postMessage('dragoverdroparea', '*');
+        function onDrop(event) {
+            console.log("🚀 ~ onDrop ~ event:", event)
+            event.preventDefault();
+            const url = event.dataTransfer.getData('text/plain');
         }
 
         window.addEventListener('message', handlePostMessage);
